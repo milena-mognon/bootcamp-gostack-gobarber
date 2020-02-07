@@ -3,6 +3,7 @@ import multer from 'multer';
 import UserController from './app/controllers/UserController';
 import SessionController from './app/controllers/SessionController';
 import FileController from './app/controllers/FileController';
+import ProviderController from './app/controllers/ProviderController';
 import authMiddleware from './app/middlewares/auth';
 import multerConfig from './config/multer';
 
@@ -19,7 +20,9 @@ routes.post('/session', SessionController.store);
 routes.use(authMiddleware);
 routes.put('/users', UserController.update);
 // segundo parametro passa um middleware -> upload.single('file')
-// upload é a variavel definida anteriormente, silgle indica que será 1 arquivo,
+// upload é a variavel definida anteriormente, single indica que será 1 arquivo,
 // 'file' é o nome do campo que será enviado na requisição
 routes.post('/files', upload.single('file'), FileController.store);
+
+routes.get('/providers', ProviderController.index);
 export default routes;

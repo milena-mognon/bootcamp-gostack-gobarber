@@ -2,6 +2,7 @@ import * as Yup from 'yup';
 import User from '../models/User';
 
 class UserController {
+  // Listar todos os usuários
   async index(req, res) {
     const users = await User.findAll();
     return res.json(users);

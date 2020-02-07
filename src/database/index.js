@@ -4,10 +4,11 @@ import databaseConfig from '../config/database';
 
 import User from '../app/models/User';
 import File from '../app/models/File';
+import Appointment from '../app/models/Appointment';
 
 // todos os models da aplicação
 // Models Loader
-const models = [User, File];
+const models = [User, File, Appointment];
 
 class Database {
   constructor() {

@@ -4,8 +4,16 @@ class File extends Model {
   static init(sequelize) {
     super.init(
       {
+        // Com o campo virtial url é possível retornar o valor para o front-end
+        // com o caminho completo para acessar o arquivo/imagem
         name: Sequelize.STRING,
         path: Sequelize.STRING,
+        url: {
+          type: Sequelize.VIRTUAL,
+          get() {
+            return `http://localhost:3000/files/${this.path}`;
+          },
+        },
       },
       {
         sequelize,
