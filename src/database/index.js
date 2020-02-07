@@ -19,7 +19,9 @@ class Database {
     this.connection = new Sequelize(databaseConfig);
 
     // percorrer o array e retornar o init que espera receber a conexão
-    models.map(model => model.init(this.connection));
+    models
+      .map(model => model.init(this.connection))
+      .map(model => model.associate && model.associate(this.connection.models));
   }
 }
 
