@@ -1,10 +1,15 @@
 import * as Yup from 'yup';
-import { startOfHour, parseISO, isBefore } from 'date-fns';
+import { startOfHour, parseISO, isBefore, format } from 'date-fns';
+import pt from 'date-fns/locale/pt';
 import Appointment from '../models/Appointment';
 import User from '../models/User';
 import File from '../models/File';
+import Notification from '../schemas/Notification';
 
 class AppointmentController {
+  /**
+   * Listagem para o usuário comum
+   */
   async index(req, res) {
     const { page = 1 } = req.query;
     // offset (page - 1 ) * 20 -> conta simple para paginação
@@ -35,6 +40,9 @@ class AppointmentController {
     return res.json(appointments);
   }
 
+  /**
+   * Cadastro do compromisso pelo usuário comum
+   */
   async store(req, res) {
     const schema = Yup.object().shape({
       provider_id: Yup.number().required(),
@@ -89,18 +97,29 @@ class AppointmentController {
         .status(400)
         .json({ error: 'Appointment date is not available' });
     }
-    console.log(hourStart.toISOString());
 
-    try {
-      const appointment = await Appointment.create({
-        user_id: req.userId,
-        provider_id,
-        date: hourStart,
-      });
-      return res.json(appointment);
-    } catch (err) {
-      return res.status(500).json({ error: err });
-    }
+    const appointment = await Appointment.create({
+      user_id: req.userId,
+      provider_id,
+      date: hourStart,
+    });
+
+    /**
+     * Notificar pretador de serviço
+     */
+
+    const user = await User.findByPk(req.userId);
+    // no date-fns o que estiver dentro de aspas simples não sofre formatação
+    const formattedDate = format(
+      hourStart,
+      "'dia' dd 'de' MMMM', às ' H:mm'h",
+      { locale: pt }
+    );
+    await Notification.create({
+      content: `Novo agendamento de ${user.name} para ${formattedDate}`,
+      user: provider_id,
+    });
+    return res.json(appointment);
   }
 }
 
