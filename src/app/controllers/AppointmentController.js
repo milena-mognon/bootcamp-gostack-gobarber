@@ -1,10 +1,12 @@
 import * as Yup from 'yup';
-import { startOfHour, parseISO, isBefore, format } from 'date-fns';
+import { startOfHour, parseISO, isBefore, format, subHours } from 'date-fns';
 import pt from 'date-fns/locale/pt';
 import Appointment from '../models/Appointment';
 import User from '../models/User';
 import File from '../models/File';
 import Notification from '../schemas/Notification';
+import Queue from '../../lib/Queue';
+import CancellationMail from '../jobs/CancellationMail';
 
 class AppointmentController {
   /**
@@ -68,6 +70,12 @@ class AppointmentController {
         .json({ error: 'You can only create appointment with providers' });
     }
 
+    if (provider_id === req.userId) {
+      return res
+        .status(401)
+        .json({ error: 'You can not create an appointment with yourself' });
+    }
+
     // parseIso transforma o date em um objeto Date do JS
     // startOfHour pega sempre o inicio da hora
     // exemplo 19:32:00 -> 19:00:00
@@ -118,6 +126,53 @@ class AppointmentController {
     await Notification.create({
       content: `Novo agendamento de ${user.name} para ${formattedDate}`,
       user: provider_id,
+    });
+    return res.json(appointment);
+  }
+
+  /**
+   * Deletar/Cancelar compromisso
+   */
+
+  async delete(req, res) {
+    const appointment = await Appointment.findByPk(req.params.id, {
+      include: [
+        {
+          model: User,
+          as: 'provider',
+          attributes: ['name', 'email'],
+        },
+        {
+          model: User,
+          as: 'user',
+          attributes: ['name'],
+        },
+      ],
+    });
+    if (appointment.user_id !== req.userId) {
+      return res.status.json({
+        error: "You don't have permission to cancel this appointment",
+      });
+    }
+
+    /**
+     * subHours remove horas do horário do agendameto
+     * 2 -> 2 horas
+     */
+    const dateWithSub = subHours(appointment.date, 2);
+
+    if (isBefore(dateWithSub, new Date())) {
+      return res.status(401).json({
+        error: 'You can only cancel appointmets 2 hours in advence',
+      });
+    }
+
+    appointment.canceled_at = new Date();
+
+    // await appointment.save();
+
+    await Queue.add(CancellationMail.key, {
+      appointment,
     });
     return res.json(appointment);
   }

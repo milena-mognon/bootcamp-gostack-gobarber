@@ -1,6 +1,6 @@
 import express from 'express';
-// importa as rotas do arquivo routes.js
 import { resolve } from 'path';
+// importa as rotas do arquivo routes.js
 import routes from './routes';
 
 import './database';
